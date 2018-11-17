@@ -2,12 +2,16 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <malloc.h>
+
 #define MAX_BLOC_LENGTH 50
 #define BASE_FILE_SIZE_IN_BLOCS 10
 #define MAX_FILE_NAME 1000
+#define MAX_ARTICLE_LENGTH 999
 #define READ_APPEND "r+"
 #define READ_WRITE "w+"
-
+#define BASE_10 10
+int _KEY = 0;
 typedef enum {
     _ANCIEN, _NOUVEAU
 } MODE;
@@ -33,18 +37,19 @@ typedef struct FICHIER {
     ENTETE entete;
 } FICHIER;
 
-bool flushBloc(FICHIER *fichier,int index){
-    fseek((*fichier).filePtr,MAX_BLOC_LENGTH*index,SEEK_SET);
-    size_t count = fwrite(&((*fichier).blocs[index]),MAX_BLOC_LENGTH,1,(*fichier).filePtr);
-    if(count == 0){
+bool flushBloc(FICHIER *fichier, int index) {
+    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET);
+    size_t count = fwrite(&((*fichier).blocs[index]), MAX_BLOC_LENGTH, 1, (*fichier).filePtr);
+    if (count == 0) {
         return false;
     }
     return true;
 }
-bool readBloc(FICHIER *fichier ,int index){
-    fseek((*fichier).filePtr,MAX_BLOC_LENGTH*index,SEEK_SET);
-    size_t count = fread(&((*fichier).blocs[index]),MAX_BLOC_LENGTH,1,(*fichier).filePtr);
-    if(count == 0){
+
+bool readBloc(FICHIER *fichier, int index) {
+    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET);
+    size_t count = fread(&((*fichier).blocs[index]), MAX_BLOC_LENGTH, 1, (*fichier).filePtr);
+    if (count == 0) {
         return false;
     }
     return true;
@@ -52,12 +57,12 @@ bool readBloc(FICHIER *fichier ,int index){
 }
 //region MACHINEABSTRAITE
 
-bool aff_Entete(FICHIER *file,ATTRIBUTE attribute , int * value){
-    char * ptr;
-    switch (attribute){
+bool aff_Entete(FICHIER *file, ATTRIBUTE attribute, int *value) {
+    char *ptr;
+    switch (attribute) {
         case NAME:
             ptr = (char *) value;
-            strcpy((*file).entete.fileName,ptr);
+            strcpy((*file).entete.fileName, ptr);
             break;
         case NB_BLOCS:
             (*file).entete.numberBlocs = *value;
@@ -72,11 +77,12 @@ bool aff_Entete(FICHIER *file,ATTRIBUTE attribute , int * value){
             (*file).entete.numberInserted = *value;
             break;
         case MODIFIED:
-            (*file).entete.modified =(bool) *value;
+            (*file).entete.modified = (bool) *value;
             break;
     }
     return true;
 }
+
 bool Ouvrir(char *nom, FICHIER *fichier, MODE mode) {
     if (nom == NULL) {
         return false;
@@ -104,6 +110,7 @@ bool Ouvrir(char *nom, FICHIER *fichier, MODE mode) {
     }
     return false;
 }
+
 bool Fermer(FICHIER *fichier) {
     if ((*fichier).entete.modified) {
         fflush((*fichier).filePtr);
@@ -113,9 +120,10 @@ bool Fermer(FICHIER *fichier) {
         return true;
     } else return false;
 }
-int getEntete(FICHIER *file , ATTRIBUTE attribute,char * fileName ){
-    strcpy(fileName,(*file).entete.fileName);
-    switch (attribute){
+
+int getEntete(FICHIER *file, ATTRIBUTE attribute, char *fileName) {
+    strcpy(fileName, (*file).entete.fileName);
+    switch (attribute) {
         case NAME:
             return -1;
         case NB_BLOCS:
@@ -132,47 +140,68 @@ int getEntete(FICHIER *file , ATTRIBUTE attribute,char * fileName ){
     return -1;
 }
 
-bool lireDir(FICHIER * fichier , int index ,Buffer *buffer){
-    if(fichier == NULL){
+bool lireDir(FICHIER *fichier, int index, Buffer *buffer) {
+    if (fichier == NULL) {
         return false;
     }
-    if(index >(*fichier).entete.numberBlocs){
+    if (index > (*fichier).entete.numberBlocs) {
         return false;
     }
-    readBloc(fichier,index);
+    readBloc(fichier, index);
     *buffer = (*fichier).blocs[index];
     return true;
 
 }
 
-bool EcrireDir(FICHIER * fichier , int index ,Buffer *buffer){
-    if(fichier == NULL){
+bool EcrireDir(FICHIER *fichier, int index, Buffer *buffer) {
+    if (fichier == NULL) {
         return false;
     }
-    if(index >(*fichier).entete.numberBlocs){
+    if (index > (*fichier).entete.numberBlocs) {
         return false;
     }
-    size_t count=0;
-    (*fichier).blocs[index] =*buffer;
-    flushBloc(fichier,index);
+    size_t count = 0;
+    (*fichier).blocs[index] = *buffer;
+    flushBloc(fichier, index);
     return true;
 
 }
+
 //endregion
+char * genKey(){
+    char *ret=NULL;
+    snprintf(ret,5,"%04d",_KEY);
+    _KEY = _KEY ++;
+    return ret;
+}
+size_t getArticle(char *article) {
+    fgets(article,MAX_ARTICLE_LENGTH,stdin);
+    size_t size = strlen(article)-1;
+
+    if( article[ size ] == '\n')
+        article[ size ] = '\0';
+    return size;
+}
+
+char *getLength(size_t size) {
+    char *buffer =NULL;
+    snprintf(buffer,4,"%03d",(int)size);
+    return buffer;
+}
+
 int main() {
 
     char fileName[] = "data/read.txt";
     FICHIER file1;
-    file1.filePtr =NULL;
+    file1.filePtr = NULL;
     file1.entete.modified = false;
-    file1.entete.numberBlocs =10;
+    file1.entete.numberBlocs = 10;
 
 
     Ouvrir(fileName, &file1, _ANCIEN);
-    printf("THE adress is %p \n", file1.filePtr);
-    Buffer buffer2;
-    strcpy(buffer2.Record,"OverwdingContent");
-    EcrireDir(&file1,1,&buffer2);
+
+
+    puts(getLength(3));
     Fermer(&file1);
     return 0;
 }
