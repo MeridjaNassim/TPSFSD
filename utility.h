@@ -22,3 +22,18 @@ size_t getArticle(char *article);
 char *getLength(size_t size);
 
 char *buildString(char *length, State state, char *Key, char *article);
+
+bool addToBuffer(Buffer *buffer, char *record);
+
+bool chauvocherBuffer(Buffer *buffer, char *record);
+
+bool viderBuffer(Buffer *buffer);
+
+bool viderChaine(char *str, size_t length);
+
+bool EcrireEntete(FICHIER *fichier);
+
+bool lireEntete(FICHIER *fichier);
+
+bool initEntete(FICHIER *fichier, char *Name, int nbBlocs, int nbArticles, int nbDeleted, int nbInserted, bool modified,
+                int lastKey);

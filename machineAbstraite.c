@@ -27,6 +27,8 @@ bool Ouvrir(char *nom, FICHIER *fichier, MODE mode) {
             (*fichier).filePtr = fopen(nom, READ_WRITE);
         }
         if ((*fichier).filePtr != NULL) { return true; }
+
+        initEntete(fichier, nom, 0, 0, 0, 0, false, -1); /// initialisation de l'entete
     }
     return false;
 }
@@ -69,9 +71,13 @@ bool lireDir(FICHIER *fichier, int index, Buffer *buffer) {
     if (index > (*fichier).entete.numberBlocs) {
         return false;
     }
-    readBloc(fichier, index);
-    *buffer = (*fichier).blocs[index];
+    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET + sizeof(ENTETE));
+    size_t count = fread(buffer, MAX_BLOC_LENGTH, 1, (*fichier).filePtr);
+    if (count == 0) {
+        return false;
+    }
     return true;
+
 
 }
 
@@ -80,11 +86,15 @@ bool EcrireDir(FICHIER *fichier, int index, Buffer *buffer) {
         return false;
     }
     if (index > (*fichier).entete.numberBlocs) {
+        (*fichier).entete.numberBlocs++;
+        (*fichier).entete.modified = true;
+    }
+
+    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET + sizeof(ENTETE));
+    size_t count = fwrite(buffer->Record, MAX_BLOC_LENGTH, 1, (*fichier).filePtr);
+    if (count == 0) {
         return false;
     }
-    size_t count = 0;
-    (*fichier).blocs[index] = *buffer;
-    flushBloc(fichier, index);
     return true;
 
 }

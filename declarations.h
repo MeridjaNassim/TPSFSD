@@ -6,12 +6,12 @@
 
 #ifndef TPSFSD_DECLARATIONS_H
 #define TPSFSD_DECLARATIONS_H
-#define MAX_BLOC_LENGTH 10000
+#define MAX_BLOC_LENGTH 10
 #define BASE_FILE_SIZE_IN_BLOCS 10
 #define MAX_FILE_NAME 1000
 #define MAX_ARTICLE_LENGTH 999
-#define READ_APPEND "r+"
-#define READ_WRITE "w+"
+#define READ_APPEND "rb+"
+#define READ_WRITE "wb+"
 #endif //TPSFSD_DECLARATIONS_H
 
 /// Type definitions : --------
@@ -38,8 +38,7 @@ typedef struct ENTETE {
 } ENTETE;
 typedef struct FICHIER {
     FILE *filePtr;
-    Bloc blocs[BASE_FILE_SIZE_IN_BLOCS];
-    Buffer buff1;
-    Buffer buff2;
+    Buffer buffW;
+    Buffer buffR;
     ENTETE entete;
 } FICHIER;
