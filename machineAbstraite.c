@@ -12,12 +12,17 @@ bool Ouvrir(char *nom, FICHIER *fichier, MODE mode) {
     }
     if (mode == _ANCIEN) {
         if ((*fichier).filePtr == NULL) {
+            char *enteteName = genEnteteName(nom);
+            fichier->entetePtr = fopen(enteteName, READ_APPEND);
+            lireEntete(fichier);
             (*fichier).filePtr = fopen(nom, READ_APPEND);
         } else {
             fclose((*fichier).filePtr);
             (*fichier).filePtr = fopen(nom, READ_APPEND);
         }
-        if ((*fichier).filePtr != NULL) { return true; }
+        if ((*fichier).filePtr != NULL) {
+            return true;
+        }
     } else {
 
         if ((*fichier).filePtr == NULL) {
@@ -26,9 +31,16 @@ bool Ouvrir(char *nom, FICHIER *fichier, MODE mode) {
             fclose((*fichier).filePtr);
             (*fichier).filePtr = fopen(nom, READ_WRITE);
         }
-        if ((*fichier).filePtr != NULL) { return true; }
+        if ((*fichier).filePtr != NULL) {
+            initEntete(fichier, nom, 0, 0, 0, 0, false, -1); /// initialisation de l'entete
+            char *enteteName = genEnteteName(nom);
+            fichier->entetePtr = fopen(enteteName, READ_WRITE);
+            EcrireEntete(fichier);
 
-        initEntete(fichier, nom, 0, 0, 0, 0, false, -1); /// initialisation de l'entete
+            return true;
+        }
+
+
     }
     return false;
 }

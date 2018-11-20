@@ -1,86 +1,31 @@
-#include "machineAbstraite.h"
-
+#include "features.h"
 
 int _KEY_ = 1;
 
-bool initLoad(FICHIER *fichier) {
-    printf("Chargement initiale du fichier : %s ...\n", fichier->entete.fileName); /// entete du chargement ;
-    printf("Entrer le nombre d'articles a inserer ...\n"); /// demende du nombre d'articles
-    int key = _KEY_;
-    int num_bloc = 0;   /// le nombre de blocs dans le fichier
-    int nbArticle = 0; ///le nombre d'articles a insérer
-    int articles; /// le nombre d'articles à insérer
-    int nbChars = 0; /// le nombre de charactere d'articles inséréer
-    scanf("%d", &nbArticle);
-    bool buffPlein = false; /// indicateur de buffer plein pour l'ecriture
-    bool chauvochement = false; /// indicateur de chauvochement
-
-    viderBuffer(&((*fichier).buffW));  /// initialisé le buffer d'ecriture a vide
-
-    /// Insertion initiale des articles
-    for (articles = 0; articles <= nbArticle; ++articles) {
-        char art[MAX_ARTICLE_LENGTH]; /// chaine de lecture a partir du clavier
-        viderChaine(art, MAX_ARTICLE_LENGTH);
-        printf("Entrer l'article ...\n"); /// demende
-        size_t articleSize = getArticle(art); /// recupérer l'article dans art de taille articleSize
-        if (articleSize == 0) {
-            continue;
+bool delete(FICHIER *fichier, char *key) {
+    /// fonction qui supprime logiquement un enregistrement dans le fichier a partir de sa clé
+    int bloc = 0;
+    int pos = 0;
+    bool found = false;
+    Search(fichier, key, &bloc, &pos,
+           &found); /// on recherche la clé dans le fichier ==> si trouvé alors on a le bloc et la position dans le bloc
+    if (found) {
+        Buffer *buffer = &((*fichier).buffR);
+        viderBuffer(buffer); /// on vide le buffer pour ne pas avoir des erreurs
+        if (pos >=
+            1) { /// si la position est supérieur a 1 donc le char effécé est dans le meme bloc à la position pos -1
+            lireDir(fichier, bloc, buffer);
+            buffer->Record[pos - 1] = 'D'; /// on met a jour le char effacé
+            EcrireDir(fichier, bloc, buffer);
+        } else { /// sinon le char effacé se trouve dans le bloc précédant à la derniere position
+            lireDir(fichier, bloc - 1, buffer);
+            buffer->Record[MAX_BLOC_LENGTH - 1] = 'D';
+            EcrireDir(fichier, bloc - 1, buffer);
         }
-        char *record = buildString(getLength(articleSize), VALID, genKey(&key),
-                                   art); /// générer l'enregistrement avec la taille le champ effacé et la clé dans record
-        nbChars = nbChars + (int) articleSize; /// on incrémente les chars
-        /// Si le buffer n'a pas d'espace pour ecrire tous l'enregistrement , on chauvoche sur un autre bloc
-        if (!addToBuffer(&((*fichier).buffW), record)) {
-            /// si le chauvochement est bien dérouler on continue
-            if (chauvocherBuffer(&((*fichier).buffW), record)) {
-                buffPlein = true;
-                chauvochement = true;
-            }
-        } else {
-            if (strlen((*fichier).buffW.Record) == MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
-                buffPlein = true;
-            }
-        }
-
-        while (chauvochement) {
-            if (buffPlein == true) {
-                EcrireDir(fichier, num_bloc, &((*fichier).buffW));
-                viderBuffer(&((*fichier).buffW));
-                buffPlein = false;
-                num_bloc++;
-            }
-            if (!addToBuffer(&((*fichier).buffW), record)) {
-                /// si le chauvochement est bien dérouler on continue
-                if (chauvocherBuffer(&((*fichier).buffW), record)) {
-                    buffPlein = true;
-                    chauvochement = true;
-                }
-            } else {
-                if (strlen((*fichier).buffW.Record) ==
-                    MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
-                    buffPlein = true;
-                } else {
-                    chauvochement = false;
-                }
-            }
-
-        }
+        return true; /// suppression avec succée;
     }
-    /// si le buffer n'est pas plein on ecrit ce qui reste
-    if (strlen((*fichier).buffW.Record) != 0 || buffPlein) {
-        EcrireDir(fichier, num_bloc, &((*fichier).buffW));
-        viderBuffer(&((*fichier).buffW));
-    }
-    /// On met à jour l'entete du fichier ;
-    aff_Entete(fichier, NB_BLOCS, &num_bloc);
-    aff_Entete(fichier, NB_ARTICLES, &articles);
-    int charTotal = nbChars + (articles) * (4 + 3 +
-                                            1); /// nombre de caractére d'articles + pour chaque article (taille + key +effacé)
-    aff_Entete(fichier, NB_INSERTED, &charTotal);
-    return true;
-
+    return false; /// on a pas trouvé la clé donc on supprime rien
 }
-
 //bool ConvertEnteteToString()
 int main() {
 
@@ -89,10 +34,18 @@ int main() {
     file1.filePtr = NULL;
 
 
-    Ouvrir(fileName, &file1, _NOUVEAU);
+    Ouvrir(fileName, &file1, _ANCIEN);
+    int bloc = 0;
+    int pos = 0;
+    bool found = false;
+    file1.entete.numberBlocs = 1;
+    file1.entete.lastKey = 1;
 
-    initLoad(&file1);
+    Search(&file1, "0005", &bloc, &pos, &found);
+
 
     Fermer(&file1);
+
+
     return 0;
 }

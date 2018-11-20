@@ -24,9 +24,9 @@
 //}
 
 char *genKey(int *Key) {
+    *Key = (*Key) + 1;
     char *ret = malloc(sizeof(char) * 5);
     snprintf(ret, 5, "%04d", *Key);
-    *Key = *Key++;
     return ret;
 }
 
@@ -127,11 +127,12 @@ bool viderChaine(char *str, size_t length) {
 }
 
 bool EcrireEntete(FICHIER *fichier) {
-    if (fichier == NULL || fichier->filePtr == NULL) {
+    if (fichier == NULL || fichier->entetePtr == NULL) {
         return false;
     }
-    rewind(fichier->filePtr);
-    size_t count = fwrite(&((*fichier).entete), sizeof((*fichier).entete), 1, fichier->filePtr);
+
+    rewind(fichier->entetePtr);
+    size_t count = fwrite(&((*fichier).entete), sizeof((*fichier).entete), 1, fichier->entetePtr);
     if (count == 0) {
         return false;
     }
@@ -139,11 +140,11 @@ bool EcrireEntete(FICHIER *fichier) {
 }
 
 bool lireEntete(FICHIER *fichier) {
-    if (fichier == NULL || fichier->filePtr == NULL) {
+    if (fichier == NULL || fichier->entetePtr == NULL) {
         return false;
     }
-    rewind(fichier->filePtr);
-    size_t count = fread(&((*fichier).entete), sizeof(ENTETE), 1, fichier->filePtr);
+    rewind(fichier->entetePtr);
+    size_t count = fread(&((*fichier).entete), sizeof(ENTETE), 1, fichier->entetePtr);
     if (count == 0) {
         return false;
     }
@@ -169,4 +170,99 @@ bool initEntete(FICHIER *fichier, char *Name, int nbBlocs, int nbArticles, int n
     strcpy((*fichier).entete.fileName, Name);
 
     return true;
+}
+
+char *genEnteteName(const char *fileName) {
+    char *entete = malloc(sizeof(char) * MAX_FILE_NAME);
+    strcpy(entete, fileName);
+    char *firstPart = strtok(entete, ".");
+    strcpy(entete, strcat(firstPart, ".ent"));
+    return entete;
+}
+
+void separator() {
+    printf("--------------------------------\n");
+}
+
+bool afficherEntete(FICHIER *fichier) {
+    separator();
+    printf("Affichage de l'entete du fichier\n");
+    separator();
+    printf("Nom/Path du fichier entete est : %s \n", genEnteteName(fichier->entete.fileName));
+    separator();
+    printf("Nom/Path du fichier est : %s\n", fichier->entete.fileName);
+    separator();
+    printf("Nombre d'articles dans le fichier est : %d\n", fichier->entete.numberArticles);
+    separator();
+    printf("Nombre de Blocs dans le fichier est : %d\n", fichier->entete.numberBlocs);
+    separator();
+    printf("Nombre de characteres dans le fichier est : %d\n", fichier->entete.numberInserted);
+    separator();
+    printf("Nombre d'articles supprimes dans le fichier est : %d\n", fichier->entete.numberDeleted);
+    separator();
+    printf("Derniere cle dans le fichier est : %d\n", fichier->entete.lastKey);
+    separator();
+    printf("Le fichier a etait modifié sans enregistré : %s\n", fichier->entete.modified ? "Oui" : "Non");
+
+}
+
+
+bool blocPlein(Bloc bloc) {
+    if (strlen(bloc.Record) == MAX_BLOC_LENGTH) {
+        return true;
+    }
+    return false;
+}
+
+char *subStringOfBloc(Buffer *buffer, int pos, size_t size) {
+    char *result = malloc(sizeof(char) * size);
+    strncpy(result, buffer->Record + pos, size);
+    return result;
+}
+
+bool finBloc(Bloc bloc, int pos) {
+    return pos >= MAX_BLOC_LENGTH;
+}
+
+void getInfo(Buffer *buff, char *taille, char *effac, char *key, int *pos, bool *depas) {
+    int index = 0;
+    while ((*pos) < MAX_BLOC_LENGTH && index < 3) {
+        taille[index] = buff->Record[(*pos)];
+        index++;
+        (*pos)++;
+    }
+    if ((*pos) >= MAX_BLOC_LENGTH) {
+        *depas = true;
+    } else {
+        *effac = buff->Record[(*pos)];
+        (*pos)++;
+        if ((*pos) >= MAX_BLOC_LENGTH) *depas = true;
+        else {
+            int index2 = 0;
+            while ((*pos) < MAX_BLOC_LENGTH && index2 < 4) {
+                key[index2] = buff->Record[(*pos)];
+                index2++;
+                (*pos)++;
+            }
+            if ((*pos) >= MAX_BLOC_LENGTH) *depas = true;
+        }
+    }
+}
+
+int getTaille(char *chaine, int pos, size_t size) {
+    char *taille = malloc(sizeof(char) * size);
+    strncpy(taille, chaine + pos, size);
+    int tai = atoi(taille);
+    return tai;
+}
+
+char getEffac(char *chaine, int pos) {
+    return chaine[pos];
+}
+
+int getKey(char *chaine, int pos, size_t size) {
+    char *taille = malloc(sizeof(char) * size);
+    strncpy(taille, chaine + pos, size);
+    int key = atoi(taille);
+    return key;
 }

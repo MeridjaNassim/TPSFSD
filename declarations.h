@@ -6,7 +6,7 @@
 
 #ifndef TPSFSD_DECLARATIONS_H
 #define TPSFSD_DECLARATIONS_H
-#define MAX_BLOC_LENGTH 10
+#define MAX_BLOC_LENGTH 20
 #define BASE_FILE_SIZE_IN_BLOCS 10
 #define MAX_FILE_NAME 1000
 #define MAX_ARTICLE_LENGTH 999
@@ -41,4 +41,5 @@ typedef struct FICHIER {
     Buffer buffW;
     Buffer buffR;
     ENTETE entete;
+    FILE *entetePtr;
 } FICHIER;

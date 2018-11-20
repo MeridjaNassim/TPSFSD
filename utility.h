@@ -37,3 +37,25 @@ bool lireEntete(FICHIER *fichier);
 
 bool initEntete(FICHIER *fichier, char *Name, int nbBlocs, int nbArticles, int nbDeleted, int nbInserted, bool modified,
                 int lastKey);
+
+char *genEnteteName(const char *fileName);
+
+void separator();
+
+bool afficherEntete(FICHIER *fichier);
+
+bool blocPlein(Bloc bloc);
+
+char *subStringOfBloc(Buffer *buffer, int pos, size_t size);
+
+bool finBloc(Bloc bloc, int pos);
+
+void getInfo(Buffer *buff, char *taille, char *effac, char *key, int *pos, bool *depas);
+
+int getTaille(char *chaine, int pos, size_t size);
+
+char getEffac(char *chaine, int pos);
+
+int getKey(char *chaine, int pos, size_t size);
+
+
