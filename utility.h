@@ -58,4 +58,10 @@ char getEffac(char *chaine, int pos);
 
 int getKey(char *chaine, int pos, size_t size);
 
+bool reorganiserFichier(FICHIER *fichier);
+
+bool fusionner(FICHIER *fichier, FICHIER *newFichier, ZoneTompon *zone);
+
+bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone);
+
 

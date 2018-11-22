@@ -2,29 +2,62 @@
 
 int _KEY_ = 1;
 
-bool delete(FICHIER *fichier, char *key) {
-    /// fonction qui supprime logiquement un enregistrement dans le fichier a partir de sa clé
-    int bloc = 0;
-    int pos = 0;
-    bool found = false;
-    Search(fichier, key, &bloc, &pos,
-           &found); /// on recherche la clé dans le fichier ==> si trouvé alors on a le bloc et la position dans le bloc
-    if (found) {
-        Buffer *buffer = &((*fichier).buffR);
-        viderBuffer(buffer); /// on vide le buffer pour ne pas avoir des erreurs
-        if (pos >=
-            1) { /// si la position est supérieur a 1 donc le char effécé est dans le meme bloc à la position pos -1
-            lireDir(fichier, bloc, buffer);
-            buffer->Record[pos - 1] = 'D'; /// on met a jour le char effacé
-            EcrireDir(fichier, bloc, buffer);
-        } else { /// sinon le char effacé se trouve dans le bloc précédant à la derniere position
-            lireDir(fichier, bloc - 1, buffer);
-            buffer->Record[MAX_BLOC_LENGTH - 1] = 'D';
-            EcrireDir(fichier, bloc - 1, buffer);
-        }
-        return true; /// suppression avec succée;
+void affichierBloc(FICHIER *fichier, int bloc) {
+    Buffer *buff = &((*fichier).buffR);
+    viderBuffer(buff);
+    lireDir(fichier, bloc, buff);
+    separator();
+    size_t t = strlen(buff->Record);
+    if (t != 0) {
+        char temp[MAX_BLOC_LENGTH + 1] = "";
+        viderChaine(temp, MAX_BLOC_LENGTH + 1);
+        strncat(temp, buff->Record, MAX_BLOC_LENGTH);
+        strcat(temp, "\0");
+        printf("le bloc (%d) contient : %s \n", bloc, temp);
+        separator();
+    } else {
+        printf("le bloc (%d) est vide ", bloc);
     }
-    return false; /// on a pas trouvé la clé donc on supprime rien
+}
+
+void afficherArticles(FICHIER *fichier, ZoneTompon *zone) {
+    /// affichage de la zone tampon :
+    int index = 0;
+    char taille[4];
+    char eff;
+    char key[5];
+    char article[MAX_ARTICLE_LENGTH];
+    separator();
+    printf("Element insere recement ------- \n");
+    separator();
+    printf("Cle---||---ETAT---||---Taille---||---Article\n");
+    separator();
+    while (index < zone->nbElement) {
+        getNextRecordFromZone(zone, &index, taille, key, &eff, article);
+        printf("%s---||---%c---||---%s---||---%s\n", key, eff, taille, article);
+        separator();
+    }
+    /// Affichage des articles dans le fichier
+    if (fichier->entete.numberArticles > 0) {
+        int pos = 0;
+        int bloc = 0;
+        char tailleF[4];
+        char effF;
+        char keyF[5];
+        char articleF[MAX_ARTICLE_LENGTH];
+        separator();
+        printf("Les Articles dans le fichier ----");
+        separator();
+        printf("Cle---||---ETAT---||---Taille---||---Article\n");
+        separator();
+        while (bloc < fichier->entete.numberBlocs) {
+            getNextRecordInFile(fichier, &bloc, &pos, tailleF, &effF, keyF, articleF);
+            printf("%s---||---%c---||---%s---||---%s\n", keyF, effF, tailleF, articleF);
+            separator();
+        }
+
+    }
+
 }
 //bool ConvertEnteteToString()
 int main() {
@@ -38,11 +71,16 @@ int main() {
     int bloc = 0;
     int pos = 0;
     bool found = false;
+    file1.entete.numberBlocs = 10;
+    file1.entete.numberArticles = 2;
     file1.entete.numberBlocs = 1;
-    file1.entete.lastKey = 1;
-
-    Search(&file1, "0005", &bloc, &pos, &found);
-
+    ZoneTompon zone;
+    Inserted elemt1;
+    initInserted(&elemt1, 3, fileName, false, strlen(fileName));
+    zone.nbElement = 1;
+    zone.array[0] = elemt1;
+    insert(&file1, 5, fileName, &zone);
+    afficherArticles(&file1, &zone);
 
     Fermer(&file1);
 

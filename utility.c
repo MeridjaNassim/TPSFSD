@@ -3,7 +3,6 @@
 //
 
 #include "utility.h"
-
 //bool flushBloc(FICHIER *fichier, int index) {
 //    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET);
 //    size_t count = fwrite(&((*fichier).buffW), MAX_BLOC_LENGTH, 1, (*fichier).filePtr);

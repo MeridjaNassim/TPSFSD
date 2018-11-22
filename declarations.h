@@ -7,7 +7,7 @@
 #ifndef TPSFSD_DECLARATIONS_H
 #define TPSFSD_DECLARATIONS_H
 #define MAX_BLOC_LENGTH 20
-#define BASE_FILE_SIZE_IN_BLOCS 10
+#define MAX_ZONE_TEMPON 20
 #define MAX_FILE_NAME 1000
 #define MAX_ARTICLE_LENGTH 999
 #define READ_APPEND "rb+"
@@ -15,6 +15,18 @@
 #endif //TPSFSD_DECLARATIONS_H
 
 /// Type definitions : --------
+typedef struct Inserted {
+    int key;
+    char article[MAX_ARTICLE_LENGTH];
+    bool deleted;
+    size_t articleSize;
+} Inserted;
+
+typedef struct ZoneTompon {
+    Inserted array[MAX_ZONE_TEMPON];
+    size_t nbElement;
+} ZoneTompon;
+
 typedef enum {
     _ANCIEN, _NOUVEAU
 } MODE;

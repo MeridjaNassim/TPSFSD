@@ -83,9 +83,18 @@ bool initLoad(FICHIER *fichier, int *_KEY_) {
 
 }
 
-bool Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found) {
+bool
+Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found, ZoneTompon *zone, bool *foundZone) {
     /// FONCTION utilisé pour réaliser une recherche d'un articles dans le fichier a partir de sa clé primaire
     /// returns : le num de bloc et la position dans le bloc du début de l'article si trouver , sinon ou on doit l'insérer ,
+    /// On recherche d'abord dans la zone Tempon :
+    searchZone(zone, getKey(key, 0, 4), foundZone,
+               (size_t *) indexInBloc); /// si la  clé se trouve dans la zone tompon alors on ne cherche pas dans le fichier(recherche dans zone est dichotomique)
+    if ((*foundZone)) {
+        return true;
+    }
+    ///-----------------------------------------
+    /// RECHERCHE DANS LE FICHIER -----------------------
     int fileLastKey = fichier->entete.lastKey - 1; /// dernier clé du fichier
     int compare = strcmp(key, genKey(&fileLastKey)); /// on compare la clé chercher par la derniere clé du fichier
     if (compare < 0) {
@@ -189,4 +198,69 @@ bool Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *f
 
     return true;
 
+}
+
+bool delete(FICHIER *fichier, char *key, ZoneTompon *zone) {
+    /// fonction qui supprime logiquement un enregistrement dans le fichier a partir de sa clé
+    int bloc = 0;
+    int pos = 0;
+    bool found = false;
+    bool foundZone = false;
+    Search(fichier, key, &bloc, &pos,
+           &found, zone,
+           &foundZone); /// on recherche la clé dans le fichier ==> si trouvé alors on a le bloc et la position dans le bloc
+    if (foundZone) {
+        zone->array[pos].deleted = true;
+        return true;
+    }
+    if (found) {
+        Buffer *buffer = &((*fichier).buffR);
+        viderBuffer(buffer); /// on vide le buffer pour ne pas avoir des erreurs
+        if (pos >=
+            1) { /// si la position est supérieur a 1 donc le char effécé est dans le meme bloc à la position pos -1
+            lireDir(fichier, bloc, buffer);
+            buffer->Record[pos - 1] = 'D'; /// on met a jour le char effacé
+            EcrireDir(fichier, bloc, buffer);
+        } else { /// sinon le char effacé se trouve dans le bloc précédant à la derniere position
+            lireDir(fichier, bloc - 1, buffer);
+            buffer->Record[MAX_BLOC_LENGTH - 1] = 'D';
+            EcrireDir(fichier, bloc - 1, buffer);
+        }
+        return true; /// suppression avec succée;
+    }
+    return false; /// on a pas trouvé la clé donc on supprime rien
+}
+
+bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone) {
+    /// insertion dans un fichier d'article a partir de sa clé
+    bool insererDansZone = false;
+    if (zone->nbElement < MAX_ZONE_TEMPON) {
+        /// on peut insérer dans la zone tempon
+        bool found = false;
+        size_t pos = 0;
+        searchZone(zone, key, &found, &pos);
+        if (found) {
+            zone->array[pos].deleted = false; /// on réactive le champ si c'est effacé
+        } else {
+            /// on insére un nouveau element dans la zone dans la position pos pour qu'elle soit trié
+            Inserted newElement;
+            size_t size = strlen(article); /// taille d'article
+            if (initInserted(&newElement, key, article, false, size)) { /// initialisation de l'element
+                decalerZone(zone, 1, (int) pos); /// décalage  des element supérieure dans la zone par une position
+                zone->array[pos] = newElement; /// on insére
+                insererDansZone = true;
+                zone->nbElement++;
+            } else {
+                insererDansZone = false;
+            }
+
+        }
+    } else {
+        insererDansZone = false;
+    }
+    if (!insererDansZone) {
+        /// si on a pas put insérer dans la zone on réorganise le fichier est la zone courante dans un nouveau
+        reorganiser(fichier, zone, true);
+        insert(fichier, key, article, zone); /// appel récursif pour réinsérer la donner
+    }
 }

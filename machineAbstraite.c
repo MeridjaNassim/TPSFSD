@@ -83,7 +83,7 @@ bool lireDir(FICHIER *fichier, int index, Buffer *buffer) {
     if (index > (*fichier).entete.numberBlocs) {
         return false;
     }
-    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET + sizeof(ENTETE));
+    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET);
     size_t count = fread(buffer, MAX_BLOC_LENGTH, 1, (*fichier).filePtr);
     if (count == 0) {
         return false;
@@ -102,7 +102,7 @@ bool EcrireDir(FICHIER *fichier, int index, Buffer *buffer) {
         (*fichier).entete.modified = true;
     }
 
-    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET + sizeof(ENTETE));
+    fseek((*fichier).filePtr, MAX_BLOC_LENGTH * index, SEEK_SET);
     size_t count = fwrite(buffer->Record, MAX_BLOC_LENGTH, 1, (*fichier).filePtr);
     if (count == 0) {
         return false;
@@ -138,4 +138,131 @@ bool aff_Entete(FICHIER *file, ATTRIBUTE attribute, int *value) {
             break;
     }
     return true;
+}
+
+void putRecordFile(FICHIER *fichier, int *bloc, int *index, char *taille, char *key, char *eff, char *article) {
+    Buffer *buff = &((*fichier).buffW); /// buffer d'ecriture
+    viderBuffer(buff); /// on le vide pour ne pas avoir d'erreur
+    lireDir(fichier, (*bloc), buff); /// on lit le bloc courant
+    State state = VALID;
+    if ((*eff) == 'D') {
+        state = DELETED;
+    }
+    char *record = buildString(taille, state, key, article); /// on construit le record a ecrire
+    while (!addToBuffer(buff, record)) {
+        /// tant que record n'est pas ajouté entierement dans le buffer on chevauche
+        chauvocherBuffer(buff, record);
+        EcrireDir(fichier, (*bloc), buff); /// on ecrit le buffer plein
+        (*bloc) = (*bloc) + 1; /// on incremente le nombre de bloc
+        viderBuffer(buff);
+    }
+}
+
+void getNextRecordFromZone(ZoneTompon *zone, int *index, char *taille, char *key, char *eff, char *article) {
+    viderChaine(taille, 4);
+    viderChaine(key, 5);
+    viderChaine(article, MAX_ARTICLE_LENGTH);
+    Inserted elt = zone->array[*(index)];
+    (*index) = (*index) + 1;
+    strcpy(taille, getLength(elt.articleSize));
+    int keyTemp = elt.key - 1;
+    strcpy(key, genKey(&keyTemp));
+    if (elt.deleted) {
+        *eff = 'D';
+    } else {
+        *eff = 'V';
+    }
+    strcpy(article, elt.article);
+}
+
+void getNextRecordInFile(FICHIER *fichier, int *bloc, int *index, char *taille, char *eff, char *key, char *article) {
+    /// fonction qui récupére le prochain record a partir du bloc a la position index
+    Buffer *buff = &((*fichier).buffR);
+    viderBuffer(buff);
+    viderChaine(taille, 4);
+    viderChaine(key, 5);
+    viderChaine(article, MAX_ARTICLE_LENGTH);
+    lireDir(fichier, (*bloc), buff);
+    for (int i = 0; i < 3; ++i) {
+        taille[i] = buff->Record[(*index)];
+        (*index)++;
+        if ((*index) >= MAX_BLOC_LENGTH) {
+            (*bloc)++;
+            viderBuffer(buff);
+            lireDir(fichier, (*bloc), buff);
+            (*index) = 0;
+        }
+    }
+    /// lecture du effacé
+    *eff = buff->Record[(*index)];
+    (*index)++;
+    if ((*index) >= MAX_BLOC_LENGTH) {
+        (*bloc)++;
+        viderBuffer(buff);
+        lireDir(fichier, (*bloc), buff);
+        (*index) = 0;
+    }
+
+    ///Lecture de la clé
+    for (int i = 0; i < 4; ++i) {
+        key[i] = buff->Record[(*index)];
+        (*index)++;
+        if ((*index) >= MAX_BLOC_LENGTH) {
+            (*bloc)++;
+            viderBuffer(buff);
+            lireDir(fichier, (*bloc), buff);
+            (*index) = 0;
+        }
+    }
+    size_t tai = (size_t) getTaille(taille, 0, 3);
+    for (int j = 0; j < tai; ++j) {
+        article[j] = buff->Record[(*index)];
+        (*index)++;
+        if ((*index) >= MAX_BLOC_LENGTH) {
+            (*bloc)++;
+            viderBuffer(buff);
+            lireDir(fichier, (*bloc), buff);
+            (*index) = 0;
+        }
+    }
+}
+
+bool initInserted(Inserted *elt, int key, char *article, bool deleted, size_t size) {
+    if (elt == NULL) {
+        return false;
+    } else {
+        elt->key = key;
+        elt->deleted = deleted;
+        elt->articleSize = size;
+        strcpy(elt->article, article);
+    }
+}
+
+void decalerZone(ZoneTompon *zone, int pos, int start) {
+    if (zone->nbElement < MAX_ZONE_TEMPON) {
+        for (int i = zone->nbElement - 1; i >= start; --i) {
+            zone->array[i + 1] = zone->array[i];
+        }
+    }
+}
+
+void searchZone(ZoneTompon *zone, int key, bool *found, size_t *pos) {
+    /// recherche dichootomique d'une clé dans la zone tompon
+    size_t inf = 0;
+    size_t sup = zone->nbElement - 1;
+    while (inf <= sup) {
+        size_t middle = (inf + sup) / 2;
+        int var = zone->array[middle].key;
+        if (var == key) {
+            *found = true;
+            *pos = middle;
+        } else if (key > var) {
+            inf = middle + 1;
+        } else {
+            sup = middle - 1;
+        }
+    }
+    if (!(*found)) {
+        *pos = inf;
+    }
 }

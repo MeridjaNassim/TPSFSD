@@ -10,4 +10,9 @@
 
 bool initLoad(FICHIER *fichier, int *_KEY_);
 
-bool Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found);
+bool
+Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found, ZoneTompon *zone, bool *foundZone);
+
+bool delete(FICHIER *fichier, char *key, ZoneTompon *zone);
+
+bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone);
