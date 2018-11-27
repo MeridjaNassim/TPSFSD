@@ -40,6 +40,8 @@ bool initEntete(FICHIER *fichier, char *Name, int nbBlocs, int nbArticles, int n
 
 char *genEnteteName(const char *fileName);
 
+char *genReorgFileName(const char *fileName);
+
 void separator();
 
 bool afficherEntete(FICHIER *fichier);
@@ -58,10 +60,7 @@ char getEffac(char *chaine, int pos);
 
 int getKey(char *chaine, int pos, size_t size);
 
-bool reorganiserFichier(FICHIER *fichier);
-
 bool fusionner(FICHIER *fichier, FICHIER *newFichier, ZoneTompon *zone);
 
-bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone);
 
 

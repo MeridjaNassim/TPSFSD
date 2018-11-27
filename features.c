@@ -14,8 +14,8 @@ bool initLoad(FICHIER *fichier, int *_KEY_) {
     scanf("%d", &nbArticle);
     bool buffPlein = false; /// indicateur de buffer plein pour l'ecriture
     bool chauvochement = false; /// indicateur de chauvochement
-
-    viderBuffer(&((*fichier).buffW));  /// initialisé le buffer d'ecriture a vide
+    Buffer *buffer = &((*fichier).buffW);
+    viderBuffer(buffer);  /// initialisé le buffer d'ecriture a vide
 
     /// Insertion initiale des articles
     for (articles = 0; articles <= nbArticle; ++articles) {
@@ -30,49 +30,59 @@ bool initLoad(FICHIER *fichier, int *_KEY_) {
                                    art); /// générer l'enregistrement avec la taille le champ effacé et la clé dans record
         nbChars = nbChars + (int) articleSize; /// on incrémente les chars
         /// Si le buffer n'a pas d'espace pour ecrire tous l'enregistrement , on chauvoche sur un autre bloc
-        if (!addToBuffer(&((*fichier).buffW), record)) {
-            /// si le chauvochement est bien dérouler on continue
-            if (chauvocherBuffer(&((*fichier).buffW), record)) {
-                buffPlein = true;
-                chauvochement = true;
-            }
-        } else {
-            if (strlen((*fichier).buffW.Record) == MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
-                buffPlein = true;
-            }
+//        if (!addToBuffer(&((*fichier).buffW), record)) {
+//            /// si le chauvochement est bien dérouler on continue
+//            if (chauvocherBuffer(&((*fichier).buffW), record)) {
+//                buffPlein = true;
+//                chauvochement = true;
+//            }
+//        } else {
+//            if (strlen((*fichier).buffW.Record) == MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
+//                buffPlein = true;
+//            }
+//        }
+//
+//        while (chauvochement) {
+//            if (buffPlein == true) {
+//                EcrireDir(fichier, num_bloc, &((*fichier).buffW));
+//                viderBuffer(&((*fichier).buffW));
+//                buffPlein = false;
+//                num_bloc++;
+//            }
+//            if (!addToBuffer(&((*fichier).buffW), record)) {
+//                /// si le chauvochement est bien dérouler on continue
+//                if (chauvocherBuffer(&((*fichier).buffW), record)) {
+//                    buffPlein = true;
+//                    chauvochement = true;
+//                }
+//            } else {
+//                if (strlen((*fichier).buffW.Record) ==
+//                    MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
+//                    buffPlein = true;
+//                } else {
+//                    chauvochement = false;
+//                }
+//            }
+//
+//        }
+        while (!addToBuffer(buffer, record)) {
+            chauvocherBuffer(buffer, record);
+            EcrireDir(fichier, num_bloc, buffer);
+            num_bloc++;
+            viderBuffer(buffer);
         }
 
-        while (chauvochement) {
-            if (buffPlein == true) {
-                EcrireDir(fichier, num_bloc, &((*fichier).buffW));
-                viderBuffer(&((*fichier).buffW));
-                buffPlein = false;
-                num_bloc++;
-            }
-            if (!addToBuffer(&((*fichier).buffW), record)) {
-                /// si le chauvochement est bien dérouler on continue
-                if (chauvocherBuffer(&((*fichier).buffW), record)) {
-                    buffPlein = true;
-                    chauvochement = true;
-                }
-            } else {
-                if (strlen((*fichier).buffW.Record) ==
-                    MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
-                    buffPlein = true;
-                } else {
-                    chauvochement = false;
-                }
-            }
-
-        }
     }
     /// si le buffer n'est pas plein on ecrit ce qui reste
-    if (strlen((*fichier).buffW.Record) != 0 || buffPlein) {
-        EcrireDir(fichier, num_bloc, &((*fichier).buffW));
-        viderBuffer(&((*fichier).buffW));
+    if (strlen(buffer->Record) != 0) {
+        EcrireDir(fichier, num_bloc, buffer);
+        viderBuffer(buffer);
     }
     /// On met à jour l'entete du fichier ;
+    num_bloc = num_bloc + 1;
     aff_Entete(fichier, NB_BLOCS, &num_bloc);
+    bool modif = true;
+    aff_Entete(fichier, MODIFIED, &modif);
     articles = articles - 1;
     aff_Entete(fichier, NB_ARTICLES, &articles);
     int charTotal = nbChars + (articles) * (4 + 3 +
@@ -97,7 +107,7 @@ Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found,
     /// RECHERCHE DANS LE FICHIER -----------------------
     int fileLastKey = fichier->entete.lastKey - 1; /// dernier clé du fichier
     int compare = strcmp(key, genKey(&fileLastKey)); /// on compare la clé chercher par la derniere clé du fichier
-    if (compare < 0) {
+    if (compare > 0) {
         /// la clé est plus grande que la plus grande clé dans fichier ==> elle n'existe pas on insérera dans le dernier bloc
         int bloc = fichier->entete.numberBlocs; /// dernier bloc
         lireDir(fichier, bloc, &(*fichier).buffR);
@@ -118,7 +128,7 @@ Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found,
         Buffer *buff = &(*fichier).buffR; /// pointer vers le buffer read du fichier
         viderBuffer(buff); /// on vide le buffer
         lireDir(fichier, currentBloc, buff); /// lecture premier bloc
-        while (!trouv && &stop) {
+        while (!trouv && !stop) {
             char taille[3];
             viderChaine(taille, 3);
             ///Lecture de la taille
@@ -135,7 +145,7 @@ Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found,
             /// lecture du effacé
             char effac = buff->Record[position];
             if (effac == 'D') {
-                position = position + getTaille(taille, 0, 3) + 4; /// On saute car c'est supprimé
+                position = position + getTaille(taille, 0, 3) + 5; /// On saute car c'est supprimé
                 if (position >= MAX_BLOC_LENGTH) {
                     currentBloc++;
                     viderBuffer(buff);
@@ -217,21 +227,24 @@ bool delete(FICHIER *fichier, char *key, ZoneTompon *zone) {
         Buffer *buffer = &((*fichier).buffR);
         viderBuffer(buffer); /// on vide le buffer pour ne pas avoir des erreurs
         if (pos >=
-            1) { /// si la position est supérieur a 1 donc le char effécé est dans le meme bloc à la position pos -1
+            5) { /// si la position est supérieur a 5 donc le char effécé est dans le meme bloc à la position pos -5
             lireDir(fichier, bloc, buffer);
-            buffer->Record[pos - 1] = 'D'; /// on met a jour le char effacé
+            buffer->Record[pos - 5] = 'D'; /// on met a jour le char effacé
             EcrireDir(fichier, bloc, buffer);
-        } else { /// sinon le char effacé se trouve dans le bloc précédant à la derniere position
+        } else { /// sinon le char effacé se trouve dans le bloc précédant à la position(5-pos)
             lireDir(fichier, bloc - 1, buffer);
-            buffer->Record[MAX_BLOC_LENGTH - 1] = 'D';
+            buffer->Record[MAX_BLOC_LENGTH - (5 - pos)] = 'D';
             EcrireDir(fichier, bloc - 1, buffer);
         }
+        fichier->entete.modified = true; /// fichier modifié
+        fichier->entete.numberDeleted++; /// nombre de supprimés
         return true; /// suppression avec succée;
+
     }
     return false; /// on a pas trouvé la clé donc on supprime rien
 }
 
-bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone) {
+bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone, char *newPotentielFile) {
     /// insertion dans un fichier d'article a partir de sa clé
     bool insererDansZone = false;
     if (zone->nbElement < MAX_ZONE_TEMPON) {
@@ -260,7 +273,11 @@ bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone) {
     }
     if (!insererDansZone) {
         /// si on a pas put insérer dans la zone on réorganise le fichier est la zone courante dans un nouveau
-        reorganiser(fichier, zone, true);
-        insert(fichier, key, article, zone); /// appel récursif pour réinsérer la donner
+        char fileName[MAX_FILE_NAME];
+        reorganiser(fichier, zone, true, fileName);
+        strcpy(newPotentielFile, fileName);
+        insert(fichier, key, article, zone, NULL); /// appel récursif pour réinsérer la donnee
     }
+    return true;
 }
+

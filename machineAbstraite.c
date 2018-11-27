@@ -4,33 +4,26 @@
 #include "machineAbstraite.h"
 
 bool Ouvrir(char *nom, FICHIER *fichier, MODE mode) {
-    if (nom == NULL) {
+    if (nom == NULL || nom[0] == '\0') {
         return false;
     }
     if (fichier == NULL) {
         fichier = malloc(sizeof(FICHIER));
     }
     if (mode == _ANCIEN) {
-        if ((*fichier).filePtr == NULL) {
-            char *enteteName = genEnteteName(nom);
-            fichier->entetePtr = fopen(enteteName, READ_APPEND);
-            lireEntete(fichier);
-            (*fichier).filePtr = fopen(nom, READ_APPEND);
-        } else {
-            fclose((*fichier).filePtr);
-            (*fichier).filePtr = fopen(nom, READ_APPEND);
-        }
+
+        char *enteteName = genEnteteName(nom);
+        fichier->entetePtr = fopen(enteteName, READ_APPEND);
+        lireEntete(fichier);
+        (*fichier).filePtr = fopen(nom, READ_APPEND);
+
         if ((*fichier).filePtr != NULL) {
             return true;
         }
     } else {
 
-        if ((*fichier).filePtr == NULL) {
-            (*fichier).filePtr = fopen(nom, READ_WRITE);
-        } else {
-            fclose((*fichier).filePtr);
-            (*fichier).filePtr = fopen(nom, READ_WRITE);
-        }
+
+        (*fichier).filePtr = fopen(nom, READ_WRITE);
         if ((*fichier).filePtr != NULL) {
             initEntete(fichier, nom, 0, 0, 0, 0, false, -1); /// initialisation de l'entete
             char *enteteName = genEnteteName(nom);
@@ -49,6 +42,8 @@ bool Fermer(FICHIER *fichier) {
     if ((*fichier).entete.modified) {
         fflush((*fichier).filePtr);
     }
+    fichier->entete.modified = false; /// on vas enregistré
+    EcrireEntete(fichier);
     int answer = fclose((*fichier).filePtr);
     if (answer == 0) {
         return true;
@@ -156,6 +151,9 @@ void putRecordFile(FICHIER *fichier, int *bloc, int *index, char *taille, char *
         (*bloc) = (*bloc) + 1; /// on incremente le nombre de bloc
         viderBuffer(buff);
     }
+    if (strlen(buff->Record) != 0) {
+        EcrireDir(fichier, (*bloc), buff);
+    }
 }
 
 void getNextRecordFromZone(ZoneTompon *zone, int *index, char *taille, char *key, char *eff, char *article) {
@@ -248,14 +246,15 @@ void decalerZone(ZoneTompon *zone, int pos, int start) {
 
 void searchZone(ZoneTompon *zone, int key, bool *found, size_t *pos) {
     /// recherche dichootomique d'une clé dans la zone tompon
-    size_t inf = 0;
-    size_t sup = zone->nbElement - 1;
+    int inf = 0;
+    int sup = zone->nbElement - 1;
     while (inf <= sup) {
-        size_t middle = (inf + sup) / 2;
+        int middle = (inf + sup) / 2;
         int var = zone->array[middle].key;
         if (var == key) {
             *found = true;
-            *pos = middle;
+            *pos = (size_t) middle;
+            break;
         } else if (key > var) {
             inf = middle + 1;
         } else {
@@ -263,6 +262,6 @@ void searchZone(ZoneTompon *zone, int key, bool *found, size_t *pos) {
         }
     }
     if (!(*found)) {
-        *pos = inf;
+        *pos = (size_t) inf;
     }
 }

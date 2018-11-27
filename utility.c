@@ -179,6 +179,14 @@ char *genEnteteName(const char *fileName) {
     return entete;
 }
 
+char *genReorgFileName(const char *fileName) {
+    char *reor = malloc(sizeof(char) * MAX_FILE_NAME);
+    strcpy(reor, fileName);
+    char *firstPart = strtok(reor, ".");
+    strcpy(reor, strcat(firstPart, "reorganized.txt"));
+    return reor;
+}
+
 void separator() {
     printf("--------------------------------\n");
 }

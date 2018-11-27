@@ -1,8 +1,7 @@
 //
 // Created by nassim on 20/11/2018.
 //
-#include "machineAbstraite.h"
-
+#include "Gestion.h"
 #ifndef TPSFSD_FEATURES_H
 #define TPSFSD_FEATURES_H
 
@@ -15,4 +14,4 @@ Search(FICHIER *fichier, char *key, int *blocNum, int *indexInBloc, bool *found,
 
 bool delete(FICHIER *fichier, char *key, ZoneTompon *zone);
 
-bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone);
+bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone, char *newPotentielFile);
