@@ -183,7 +183,7 @@ char *genReorgFileName(const char *fileName) {
     char *reor = malloc(sizeof(char) * MAX_FILE_NAME);
     strcpy(reor, fileName);
     char *firstPart = strtok(reor, ".");
-    strcpy(reor, strcat(firstPart, "reorganized.txt"));
+    strcpy(reor, strcat(firstPart, "(edited).txt"));
     return reor;
 }
 

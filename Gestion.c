@@ -45,7 +45,8 @@ bool reorganiserFichier(FICHIER *fichier, char *newName) {
     newFichier.entete.numberArticles = nbArticles;
     newFichier.entete.lastKey = getKey(keyF, 0, 4);
     newFichier.entete.numberDeleted = 0;
-    newFichier.entete.modified = false;
+    newFichier.entete.modified = true;
+    EcrireEntete(&newFichier);
     Fermer(&newFichier);
     return true;
 
@@ -176,6 +177,10 @@ bool fusionner(FICHIER *fichier, FICHIER *newFichier, ZoneTompon *zone) {
 
 bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFileName) {
     /// si la zone est utilisé est elle n'est pas a NULL
+    int nbChars;
+    int nbArticles;
+    int nbBlocs;
+    int lastKey;
     if (useZone && zone != NULL) {
         int smallestZoneKey = zone->array[0].key; /// on récupére la premiere (plus petite)clé de la zone
         if (smallestZoneKey > fichier->entete.lastKey) {
@@ -184,6 +189,9 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
             Buffer *buff = &((*fichier).buffR);
             int b = fichier->entete.numberBlocs == 0 ? 0 : fichier->entete.numberBlocs - 1;
             lireDir(fichier, b, buff); /// on lit le dernier bloc du fichier réorganisé ;
+            nbChars = fichier->entete.numberInserted;
+            nbArticles = fichier->entete.numberArticles;
+            nbBlocs = fichier->entete.numberBlocs;
             if (blocPlein(*buff)) { /// si le dernier bloc est plein
                 fichier->entete.numberBlocs++; /// on ecrit dans un nouveau bloc qu'on ajoute au fichier
                 int currentBloc = fichier->entete.numberBlocs - 1;
@@ -192,17 +200,20 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
                 for (int i = 0; i < zone->nbElement; ++i) {
                     Inserted elt = zone->array[i]; /// on recupére l'element
                     if (!elt.deleted) { /// si il n'est supprimé de la zone
+                        lastKey = elt.key;
                         int keyM = elt.key - 1;
                         char *keyI = genKey(&keyM); /// on génére sa clé
                         char *record = buildString(getLength(elt.articleSize), VALID, keyI,
                                                    elt.article); /// on construit son record a ecrire
-
+                        nbArticles++;
+                        nbChars = nbChars + (int) strlen(record);
                         while (!addToBuffer(buff, record)) {
                             /// tant que record contient encore des char on chauvauche sur le bloc courant est on l'ecrit et on vide le buffer
                             chauvocherBuffer(buff, record);
                             EcrireDir(fichier, currentBloc, buff);
                             viderBuffer(buff);
                             currentBloc++;
+                            nbBlocs++;
                         }
                         if (strlen(buff->Record) != 0) {
                             EcrireDir(fichier, currentBloc, buff);
@@ -220,16 +231,20 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
                 for (int i = 0; i < zone->nbElement; ++i) {
                     Inserted elt = zone->array[i];
                     if (!elt.deleted) {
+                        lastKey = elt.key;
                         int keyM = elt.key - 1;
                         char *keyI = genKey(&keyM);
                         char *record = buildString(getLength(elt.articleSize), VALID, keyI,
                                                    elt.article);/// génération du record
+                        nbArticles++;
+                        nbChars = nbChars + (int) strlen(record);
                         /// l'ecriture du record sur le fichier
                         while (!addToBuffer(buff, record)) {
                             chauvocherBuffer(buff, record);
                             EcrireDir(fichier, currentBloc, buff);
                             viderBuffer(buff);
                             currentBloc++;
+                            nbBlocs++;
                         }
                         if (strlen(buff->Record) != 0) {
                             EcrireDir(fichier, currentBloc, buff);
@@ -239,6 +254,13 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
                     }
                 }
                 zone->nbElement = 0; /// on a plus de records inséré dans zone on peut alors l'utilisé
+                strcpy(fichier->entete.fileName, newFileName);
+                fichier->entete.numberBlocs = nbBlocs;
+                fichier->entete.numberArticles = nbArticles;
+                fichier->entete.numberInserted = nbChars;
+                fichier->entete.lastKey = lastKey;
+                fichier->entete.modified = true;
+                Fermer(fichier);
             }
         } else {
             /// si la plus grande clé dans fichier est inférieure a la plus petite clé dans zone
@@ -254,7 +276,6 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
     } else {
         /// reorganisation uniquement du fichier;
         reorganiserFichier(fichier, newFileName);
-        Fermer(fichier);
         Ouvrir(newFileName, fichier, _ANCIEN);
     }
 }

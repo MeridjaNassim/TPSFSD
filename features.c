@@ -276,7 +276,7 @@ bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone, char *ne
         char fileName[MAX_FILE_NAME];
         reorganiser(fichier, zone, true, fileName);
         strcpy(newPotentielFile, fileName);
-        insert(fichier, key, article, zone, NULL); /// appel récursif pour réinsérer la donnee
+        insert(fichier, key, article, zone, fileName); /// appel récursif pour réinsérer la donnee
     }
     return true;
 }

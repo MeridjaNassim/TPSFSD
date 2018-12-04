@@ -39,11 +39,12 @@ bool Ouvrir(char *nom, FICHIER *fichier, MODE mode) {
 }
 
 bool Fermer(FICHIER *fichier) {
-    if ((*fichier).entete.modified) {
-        fflush((*fichier).filePtr);
+    fflush((*fichier).filePtr);
+    /// on vas enregistré si fichier modifié
+    if (fichier->entete.modified) {
+        fichier->entete.modified = false;
+        EcrireEntete(fichier);
     }
-    fichier->entete.modified = false; /// on vas enregistré
-    EcrireEntete(fichier);
     int answer = fclose((*fichier).filePtr);
     if (answer == 0) {
         return true;

@@ -250,6 +250,7 @@ int main() {
                 if (articleInsert[0] == '\n') {
                     fgets(articleInsert, MAX_ARTICLE_LENGTH, stdin);
                 }
+                articleInsert[strlen(articleInsert) - 1] = '\0';
                 printf("Entrer sa cle primaire unique \n");
                 scanf("%s", KeyChar);
                 viderChaine(newFileName, MAX_FILE_NAME);
@@ -349,6 +350,7 @@ int main() {
         } else {
             /// on a besoin d'un nouveau fichier
             reorganiser(&file, &zone, true, newFileName);
+            return 0;/// on sort
         }
     }
     Fermer(&file);
