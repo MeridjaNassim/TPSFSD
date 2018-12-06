@@ -254,14 +254,15 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
                     }
                 }
                 zone->nbElement = 0; /// on a plus de records inséré dans zone on peut alors l'utilisé
-                strcpy(fichier->entete.fileName, newFileName);
-                fichier->entete.numberBlocs = nbBlocs;
-                fichier->entete.numberArticles = nbArticles;
-                fichier->entete.numberInserted = nbChars;
-                fichier->entete.lastKey = lastKey;
-                fichier->entete.modified = true;
-                Fermer(fichier);
+
             }
+            strcpy(fichier->entete.fileName, newFileName);
+            fichier->entete.numberBlocs = nbBlocs;
+            fichier->entete.numberArticles = nbArticles;
+            fichier->entete.numberInserted = nbChars;
+            fichier->entete.lastKey = lastKey;
+            fichier->entete.modified = true;
+            Fermer(fichier);
         } else {
             /// si la plus grande clé dans fichier est inférieure a la plus petite clé dans zone
             static FICHIER newFichier; /// le fichier reorganisé a retourné
@@ -279,3 +280,47 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
         Ouvrir(newFileName, fichier, _ANCIEN);
     }
 }
+
+void SauvegarderZoneFichierVide(FICHIER *fichier, ZoneTompon *zone) {
+    /// Sauvegarde toute la zone tompon du programme dans un fichier supposé vide , elle est utilisé quand on insére dans un fichier initialement vide
+    /// pour éviter l'appelle de la fonction de réorganisation
+    Buffer *buffer = &((*fichier).buffW); /// ptr vers notre buffer
+    int bloc = 0; /// bloc courrant
+    int nbArticles = 0; /// nombre d'articles
+    int nbChar = 0; /// nombre de chars
+    int lastKey = -1; /// derniere clé dans le fichier
+    /// On parcours les elements de la zone et on insére chaqun dans le fichier
+    for (int i = 0; i < zone->nbElement; ++i) {
+        Inserted elt = zone->array[i]; /// element courrant
+        State state = elt.deleted ? DELETED : VALID; /// récupérer son etat dans state
+        if (state == DELETED) continue; /// si supprimé on le passe
+        int KeyM = elt.key - 1;
+        char *record = buildString(getLength(elt.articleSize), state, genKey(&KeyM),
+                                   elt.article); /// on génére l'enregistrement correspondant dans record
+        nbArticles++;
+        nbChar = nbChar + (int) elt.articleSize + 1 + 3 + 4;
+        lastKey = KeyM; /// maj de la derniere clef
+        /// on chauvauche le record est on l'ecrit tant qu'on peut pas l'ajouter entriement au buffer
+        while (!addToBuffer(buffer, record)) {
+            chauvocherBuffer(buffer, record);
+            EcrireDir(fichier, bloc, buffer);
+            bloc++;
+            viderBuffer(buffer);
+        }
+
+    }
+    /// si on a encore des char restant on les ecrit
+    if (strlen(buffer->Record) != 0) {
+        EcrireDir(fichier, bloc, buffer);
+    }
+    /// MAJ de l'entete
+    fichier->entete.numberBlocs = bloc;
+    fichier->entete.numberDeleted = 0;
+    fichier->entete.modified = false;
+    fichier->entete.lastKey = lastKey;
+    fichier->entete.numberArticles = nbArticles;
+    fichier->entete.numberInserted = nbChar;
+    EcrireEntete(fichier);
+
+}
+

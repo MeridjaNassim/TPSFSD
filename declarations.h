@@ -6,12 +6,13 @@
 
 #ifndef TPSFSD_DECLARATIONS_H
 #define TPSFSD_DECLARATIONS_H
-#define MAX_BLOC_LENGTH 20
+#define MAX_BLOC_LENGTH 1024
 #define MAX_ZONE_TEMPON 30
 #define MAX_FILE_NAME 1000
 #define MAX_ARTICLE_LENGTH 999
 #define READ_APPEND "rb+"
 #define READ_WRITE "wb+"
+#define POURCENTAGE 0.5
 #endif //TPSFSD_DECLARATIONS_H
 
 /// Type definitions : --------

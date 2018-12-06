@@ -30,41 +30,6 @@ bool initLoad(FICHIER *fichier, int *_KEY_) {
                                    art); /// générer l'enregistrement avec la taille le champ effacé et la clé dans record
         nbChars = nbChars + (int) articleSize; /// on incrémente les chars
         /// Si le buffer n'a pas d'espace pour ecrire tous l'enregistrement , on chauvoche sur un autre bloc
-//        if (!addToBuffer(&((*fichier).buffW), record)) {
-//            /// si le chauvochement est bien dérouler on continue
-//            if (chauvocherBuffer(&((*fichier).buffW), record)) {
-//                buffPlein = true;
-//                chauvochement = true;
-//            }
-//        } else {
-//            if (strlen((*fichier).buffW.Record) == MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
-//                buffPlein = true;
-//            }
-//        }
-//
-//        while (chauvochement) {
-//            if (buffPlein == true) {
-//                EcrireDir(fichier, num_bloc, &((*fichier).buffW));
-//                viderBuffer(&((*fichier).buffW));
-//                buffPlein = false;
-//                num_bloc++;
-//            }
-//            if (!addToBuffer(&((*fichier).buffW), record)) {
-//                /// si le chauvochement est bien dérouler on continue
-//                if (chauvocherBuffer(&((*fichier).buffW), record)) {
-//                    buffPlein = true;
-//                    chauvochement = true;
-//                }
-//            } else {
-//                if (strlen((*fichier).buffW.Record) ==
-//                    MAX_BLOC_LENGTH) { /// le buffer est plein mais pas de chauvochement
-//                    buffPlein = true;
-//                } else {
-//                    chauvochement = false;
-//                }
-//            }
-//
-//        }
         while (!addToBuffer(buffer, record)) {
             chauvocherBuffer(buffer, record);
             EcrireDir(fichier, num_bloc, buffer);
@@ -281,3 +246,122 @@ bool insert(FICHIER *fichier, int key, char *article, ZoneTompon *zone, char *ne
     return true;
 }
 
+void renameFile(FICHIER *fichier, char *newName) {
+    if (newName != NULL) {
+        rename(genEnteteName(fichier->entete.fileName), genEnteteName(newName));
+        rename(fichier->entete.fileName, newName);
+        strcpy(fichier->entete.fileName, newName);
+        EcrireEntete(fichier);
+    }
+
+}
+
+void randomLoadingOfFile(FICHIER *fichier, int dataSize) {
+    /// fonction pour générér des articles aléatoirement et les insérés dans le fichier
+    int key = -1; /// la clé primaire des articles
+    int num_bloc = 0;   /// le nombre de blocs dans le fichier
+    int nbArticle = 0; ///le nombre d'articles a insérer
+    int nbChars = 0; /// le nombre de charactere d'articles inséréer
+    Buffer *buffer = &((*fichier).buffW); /// ptr vers notre buffer
+    viderBuffer(buffer); /// on le vide pour ne pas avoir des erreurs
+    for (int i = 0; i < dataSize; ++i) {
+        int r = rand() % 1000; /// on génére un taille aléatoire comprise entre 0 et 999
+        if (r == 0) {
+            /// si la taille aléatoire est nul on la met a 10
+            r = 10;
+        }
+        char *randomStr = randString(r); /// on génére un article aléatoire
+        char *record = buildString(getLength((size_t) r), VALID, genKey(&key),
+                                   randomStr); /// générer l'enregistrement avec la taille le champ effacé et la clé dans record
+        nbArticle++; /// inc le nombre d'articles
+        nbChars = nbChars + (int) r; /// on incrémente les chars
+        /// Si le buffer n'a pas d'espace pour ecrire tous l'enregistrement , on chauvoche sur un autre bloc
+        while (!addToBuffer(buffer, record)) {
+            chauvocherBuffer(buffer, record);
+            EcrireDir(fichier, num_bloc, buffer);
+            num_bloc++;
+            viderBuffer(buffer);
+        }
+
+    }
+    /// si le buffer n'est pas plein on ecrit ce qui reste
+    if (strlen(buffer->Record) != 0) {
+        EcrireDir(fichier, num_bloc, buffer);
+        viderBuffer(buffer);
+    }
+/// On met à jour l'entete du fichier ;
+    num_bloc = num_bloc + 1;
+    aff_Entete(fichier, NB_BLOCS, &num_bloc);
+    bool modif = true;
+    aff_Entete(fichier, MODIFIED, &modif);
+    aff_Entete(fichier, NB_ARTICLES, &nbArticle);
+    int charTotal = nbChars + (nbArticle) * (4 + 3 +
+                                             1); /// nombre de caractére d'articles + pour chaque article (taille + key +effacé)
+    aff_Entete(fichier, NB_INSERTED, &charTotal);
+    aff_Entete(fichier, LAST_KEY, &key);
+    EcrireEntete(fichier);
+}
+
+void affichierBloc(FICHIER *fichier, int bloc) {
+    Buffer *buff = &((*fichier).buffR);
+    viderBuffer(buff);
+    lireDir(fichier, bloc, buff);
+    separator();
+    size_t t = strlen(buff->Record);
+    if (t != 0) {
+        char temp[MAX_BLOC_LENGTH + 1] = "";
+        viderChaine(temp, MAX_BLOC_LENGTH + 1);
+        strncat(temp, buff->Record, MAX_BLOC_LENGTH);
+        strcat(temp, "\0");
+        printf("le bloc (%d) contient : %s \n", bloc, temp);
+        separator();
+    } else {
+        printf("le bloc (%d) est vide ", bloc);
+    }
+}
+
+void afficherArticles(FICHIER *fichier, ZoneTompon *zone) {
+    /// affichage de la zone tampon :
+    int index = 0;
+    char taille[4];
+    char eff;
+    char key[5];
+    char article[MAX_ARTICLE_LENGTH];
+    separator();
+
+    printf("Element insere recement ------- \n");
+    separator();
+    printf("Cle---||---ETAT---||---Taille---||---Article\n");
+    separator();
+    while (index < zone->nbElement) {
+        getNextRecordFromZone(zone, &index, taille, key, &eff, article);
+        printf("%s---||---%c---||---%s---||---%s\n", key, eff, taille, article);
+        separator();
+    }
+
+    /// Affichage des articles dans le fichier
+    if (fichier->entete.numberArticles > 0) {
+        int pos = 0;
+        int bloc = 0;
+        char tailleF[4];
+        char effF;
+        char keyF[5];
+        char articleF[MAX_ARTICLE_LENGTH];
+        separator();
+        printf("Les Articles dans le fichier ----");
+        separator();
+        printf("Cle---||---ETAT---||---Taille---||---Article\n");
+        separator();
+        bool stop;
+        while (bloc < fichier->entete.numberBlocs && !stop) {
+            getNextRecordInFile(fichier, &bloc, &pos, tailleF, &effF, keyF, articleF);
+            if (strlen(tailleF) == 0) {
+                stop = true;
+            }
+            printf("%s---||---%c---||---%s---||---%s\n", keyF, effF, tailleF, articleF);
+            separator();
+        }
+
+    }
+
+}

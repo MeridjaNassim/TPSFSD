@@ -22,6 +22,51 @@
 //
 //}
 
+char *randString(int length) {
+    /// fonction qui génére une chaine aléatoirement
+    static int mySeed = 25011984; /// utilisé pour généré un nombre aléatoire
+    char *string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!"; /// chaine principale
+    size_t stringLen = strlen(string);
+    char *randomString = NULL;
+
+    srand(time(NULL) * length + ++mySeed); /// initialisé le seed du générateur de nombre aléatoire
+
+    if (length < 1) {
+        length = 1;
+    }
+
+    randomString = malloc(sizeof(char) * (length + 1)); /// allouer un espace memoire pour cette chaine
+
+    if (randomString) {
+        /// si on a put allouer un espace
+        short key = 0;
+
+        for (int n = 0; n < length; n++) {
+            key = rand() % stringLen; /// clé aléatoire pour choisir un char
+            randomString[n] = string[key];
+        }
+
+        randomString[length] = '\0'; /// on termine la chaine par le terminateur
+
+        return randomString;
+    } else {
+        printf("No memory");
+        exit(1);
+    }
+}
+
+bool continuE() {
+/// Fonction utilisé pour temporisé le deroulement du programme
+    printf("Continuer le traitement ? [1] ...\n");
+    int cont;
+    scanf("%d", &cont);
+    if (cont == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 char *genKey(int *Key) {
     *Key = (*Key) + 1;
     char *ret = malloc(sizeof(char) * 5);
@@ -135,6 +180,7 @@ bool EcrireEntete(FICHIER *fichier) {
     if (count == 0) {
         return false;
     }
+    fflush((*fichier).entetePtr);
     return true;
 }
 
@@ -273,3 +319,47 @@ int getKey(char *chaine, int pos, size_t size) {
     int key = atoi(taille);
     return key;
 }
+
+void AfficherMenu() {
+    separator();
+    printf("<==CHOISIR UNE OPERATION==> \n");
+    separator();
+    printf("0->Chargement initiale Aleatoire d'un nouveau fichier \n");
+    separator();
+    printf("1->Chargement initiale manuelle d'un nouveau fichier \n");
+    separator();
+    printf("2->Rechercher un article a partir de sa clé primaire \n");
+    separator();
+    printf("3->Inserer un nouveau article avec sa cle \n");
+    separator();
+    printf("4->Supprimer un article à partir de sa cle \n");
+    separator();
+    printf("5->Afficher un Bloc dans le fichier courant \n");
+    separator();
+    printf("6->Lister tous les articles \n");
+    separator();
+    printf("7->Réorganiser le fichier \n");
+    separator();
+    printf("8->Afficher l'entete du fichier \n");
+    separator();
+    printf("9->Sauvegarder l'entete du fichier \n");
+    separator();
+    printf("10->Renomer un fichier \n");
+    separator();
+    printf("11->Quitter \n");
+}
+
+void askFileName(char *filename) {
+    scanf("%s", filename);
+}
+
+void affichierMain() {
+    separator();
+    printf("Programme de manipulation de fichier \n");
+    separator();
+    separator();
+    printf("SELECTION DU FICHIER \n");
+    printf("1-Creer un nouveau fichier \n");
+    printf("2-Utiliser un fichier existant sur le disque dur \n");
+}
+

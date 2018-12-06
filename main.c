@@ -1,167 +1,28 @@
 #include "features.h"
 
-#define POURCENTAGE 0.5
+/**
+ * TP SFSD - 2018/2019- STRUCTURES SIMPLES
+ * Auteur : MERIDJA ABDELLAH NASSIM (monome)
+ * GROUPE : 02
+ * ENSEIGNANT : Mme . Alia
+ * */
+
+
 int _KEY_ = -1;
 
-void AfficherMenu() {
-    separator();
-    printf("<==CHOISIR UNE OPERATION==> \n");
-    separator();
-    printf("1->Chargement initiale d'un nouveau fichier \n");
-    separator();
-    printf("2->Rechercher un article a partir de sa clé primaire \n");
-    separator();
-    printf("3->Inserer un nouveau article avec sa cle \n");
-    separator();
-    printf("4->Supprimer un article à partir de sa cle \n");
-    separator();
-    printf("5->Afficher un Bloc dans le fichier courant \n");
-    separator();
-    printf("6->Lister tous les articles \n");
-    separator();
-    printf("7->Réorganiser le fichier \n");
-    separator();
-    printf("8->Afficher l'entete du fichier \n");
-    separator();
-    printf("9->Sauvegarder l'entete du fichier \n");
-    separator();
-    printf("10->Quitter \n");
-
-}
-
-void askFileName(char *filename) {
-    scanf("%s", filename);
-}
-
-void affichierMain() {
-    separator();
-    printf("Programme de manipulation de fichier \n");
-    separator();
-    separator();
-    printf("SELECTION DU FICHIER \n");
-    printf("1-Creer un nouveau fichier \n");
-    printf("2-Utiliser un fichier existant sur le disque dur \n");
-}
-
-void affichierBloc(FICHIER *fichier, int bloc) {
-    Buffer *buff = &((*fichier).buffR);
-    viderBuffer(buff);
-    lireDir(fichier, bloc, buff);
-    separator();
-    size_t t = strlen(buff->Record);
-    if (t != 0) {
-        char temp[MAX_BLOC_LENGTH + 1] = "";
-        viderChaine(temp, MAX_BLOC_LENGTH + 1);
-        strncat(temp, buff->Record, MAX_BLOC_LENGTH);
-        strcat(temp, "\0");
-        printf("le bloc (%d) contient : %s \n", bloc, temp);
-        separator();
-    } else {
-        printf("le bloc (%d) est vide ", bloc);
-    }
-}
-
-void afficherArticles(FICHIER *fichier, ZoneTompon *zone) {
-    /// affichage de la zone tampon :
-    int index = 0;
-    char taille[4];
-    char eff;
-    char key[5];
-    char article[MAX_ARTICLE_LENGTH];
-    separator();
-
-    printf("Element insere recement ------- \n");
-    separator();
-    printf("Cle---||---ETAT---||---Taille---||---Article\n");
-    separator();
-    while (index < zone->nbElement) {
-        getNextRecordFromZone(zone, &index, taille, key, &eff, article);
-        printf("%s---||---%c---||---%s---||---%s\n", key, eff, taille, article);
-        separator();
-    }
-
-    /// Affichage des articles dans le fichier
-    if (fichier->entete.numberArticles > 0) {
-        int pos = 0;
-        int bloc = 0;
-        char tailleF[4];
-        char effF;
-        char keyF[5];
-        char articleF[MAX_ARTICLE_LENGTH];
-        separator();
-        printf("Les Articles dans le fichier ----");
-        separator();
-        printf("Cle---||---ETAT---||---Taille---||---Article\n");
-        separator();
-        while (bloc < fichier->entete.numberBlocs) {
-            getNextRecordInFile(fichier, &bloc, &pos, tailleF, &effF, keyF, articleF);
-            printf("%s---||---%c---||---%s---||---%s\n", keyF, effF, tailleF, articleF);
-            separator();
-        }
-
-    }
-
-}
-
-bool continuE() {
-
-    printf("Continuer le traitement ? [1] ...\n");
-    int cont;
-    scanf("%d", &cont);
-    if (cont == 1) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-void SauvegarderZoneFichierVide(FICHIER *fichier, ZoneTompon *zone) {
-    Buffer *buffer = &((*fichier).buffW);
-    int bloc = 0;
-    int nbArticles = 0;
-    int nbChar = 0;
-    int lastKey = -1;
-    for (int i = 0; i < zone->nbElement; ++i) {
-        Inserted elt = zone->array[i];
-        State state = elt.deleted ? DELETED : VALID;
-        if (state == DELETED) continue;
-        int KeyM = elt.key - 1;
-        char *record = buildString(getLength(elt.articleSize), state, genKey(&KeyM), elt.article);
-        nbArticles++;
-        nbChar = nbChar + (int) elt.articleSize + 1 + 3 + 4;
-        lastKey = KeyM;
-        while (!addToBuffer(buffer, record)) {
-            chauvocherBuffer(buffer, record);
-            EcrireDir(fichier, bloc, buffer);
-            bloc++;
-            viderBuffer(buffer);
-        }
-
-    }
-    if (strlen(buffer->Record) != 0) {
-        EcrireDir(fichier, bloc, buffer);
-    }
-    fichier->entete.numberBlocs = bloc;
-    fichier->entete.numberDeleted = 0;
-    fichier->entete.modified = false;
-    fichier->entete.lastKey = lastKey;
-    fichier->entete.numberArticles = nbArticles;
-    fichier->entete.numberInserted = nbChar;
-    EcrireEntete(fichier);
-
-}
-
-//bool ConvertEnteteToString()
 int main() {
 
 
     /// MAIN PROGRAMME LOOOP
     affichierMain();
+    //region VARIABLES DU FICHIER
     FICHIER file;
     ZoneTompon zone;
     zone.nbElement = 0;
     char fileName[MAX_FILE_NAME];
     bool fileOpened = false;
+    //endregion
+    /// Ouverture du fichier selon le mode
     while (!fileOpened) {
         int choice1 = 0;
         printf("Entrer votre choix d'exécution \n");
@@ -188,23 +49,36 @@ int main() {
             separator();
         }
     }
+    //region Variables de manipulation du menu
     bool quit = false;
     int choice2 = 0;
     int searchedkey = 0;
     int tempKey;
     int numBloc = 0;
+    int nbdonnes = 0;
     int pos = 0;
     bool found = false;
     bool foundZone = false;
     char articleInsert[MAX_ARTICLE_LENGTH];
     char newFileName[MAX_FILE_NAME];
     char KeyChar[5];
+    //endregion
     while (!quit) {
         AfficherMenu();
         separator();
         printf("Entrer votre choix : ");
         scanf("%d", &choice2);
         switch (choice2) {
+            case 0: /// chargement aléatoire ;
+                printf("Chargement Aléatoire du fichier \n");
+                printf("Entrer le nombre de donnes a insérer aléatoirement");
+                scanf("%d", &nbdonnes);
+                srand(time(NULL));
+                randomLoadingOfFile(&file, nbdonnes);
+                if (continuE()) {
+                    continue;
+                }
+                break;
             case 1: /// chargement initiale du fichier new
                 initLoad(&file, &_KEY_);
 
@@ -220,8 +94,10 @@ int main() {
                 pos = 0;
                 found = false;
                 foundZone = false;
-                Search(&file, genKey(&tempKey), &numBloc, &pos, &found, &zone, &foundZone);
+                Search(&file, genKey(&tempKey), &numBloc, &pos, &found, &zone,
+                       &foundZone); /// recherche de la clé la position correspond a la position de départ de l'article
                 if (foundZone) {
+                    /// on a trouvé l'article dans la zone temporaire d'insertion (accées très rapide)
                     printf("L'article correspondant à la cle recherche est trouvé dans la zone tompon à la position (%d) \n",
                            pos);
                     separator();
@@ -229,7 +105,8 @@ int main() {
                         continue;
                     }
                 } else if (found) {
-                    printf("L'article correspondant à la cle recherche est trouvé dans le fichier au bloc (%d) à la position (%d)",
+                    /// clé trouvé dans le fichier physique
+                    printf("L'article correspondant à la cle recherche est trouvee dans le fichier au bloc (%d) à la position (%d)",
                            numBloc, pos);
                     separator();
                     if (continuE()) {
@@ -246,12 +123,11 @@ int main() {
             case 3: /// Insertion d'un article;
                 printf("Entrer l'article à inserer :");
                 viderChaine(articleInsert, MAX_ARTICLE_LENGTH);
+                fflush(stdin);
                 fgets(articleInsert, MAX_ARTICLE_LENGTH, stdin);
-                if (articleInsert[0] == '\n') {
-                    fgets(articleInsert, MAX_ARTICLE_LENGTH, stdin);
-                }
                 articleInsert[strlen(articleInsert) - 1] = '\0';
-                printf("Entrer sa cle primaire unique \n");
+                separator();
+                printf("Entrer sa cle primaire unique:  \n");
                 scanf("%s", KeyChar);
                 viderChaine(newFileName, MAX_FILE_NAME);
                 if (insert(&file, getKey(KeyChar, 0, 4), articleInsert, &zone, newFileName)) {
@@ -269,7 +145,7 @@ int main() {
                 break;
             case 4:  /// supprimer un article
                 viderChaine(KeyChar, 5);
-                printf("Entrer la clé de l'enregistrement a supprimer (4 charactere) :");
+                printf("Entrer la clé de l'enregistrement a supprimer (4 charactere) : ");
                 scanf("%s", KeyChar);
                 if (delete(&file, KeyChar, &zone)) {
                     printf("Supprime avec success \n");
@@ -279,7 +155,7 @@ int main() {
                 }
                 break;
             case 5: /// afficher le contenu d'un bloc du fichier
-                printf("Entrer le numéro du bloc à afficher :");
+                printf("Entrer le numéro du bloc à afficher : ");
                 scanf("%d", &numBloc);
                 affichierBloc(&file, numBloc);
                 if (continuE()) {
@@ -323,13 +199,21 @@ int main() {
                     continue;
                 }
                 break;
-            case 10:
+            case 10: /// renommer le fichier
+                viderChaine(newFileName, MAX_FILE_NAME);
+                printf("Entrer le nom du nouveau fichier : \n");
+                fflush(stdin);
+                fgets(newFileName, MAX_FILE_NAME, stdin);
+                renameFile(&file, newFileName);
+                break;
+            case 11: /// Quitter
                 quit = true;
                 break;
             default:
                 printf("Operation inexistante rechoisisez ... \n");
                 continue;
         }
+        /// verification pour la réorganisation automatique : si nombre d'articles supprimé > 1/2 * nombre d'articles dans le fichier
         if (file.entete.numberDeleted > POURCENTAGE * file.entete.numberArticles) {
             printf("Reorganisation Automatique du fichier ... \n");
             reorganiserFichier(&file, newFileName);
@@ -353,6 +237,7 @@ int main() {
             return 0;/// on sort
         }
     }
+    /// pas d'élements inséré dans la zone tompon ==> ferméture simple
     Fermer(&file);
     return 0;
 }

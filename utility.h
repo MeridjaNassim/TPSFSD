@@ -5,62 +5,75 @@
 #include <string.h>
 #include <stdlib.h>
 #include <malloc.h>
+#include <time.h>
 
 #ifndef TPSFSD_UTILITY_H
 #define TPSFSD_UTILITY_H
 
 #endif //TPSFSD_UTILITY_H
 
-bool flushBloc(FICHIER *fichier, int index);
 
-bool readBloc(FICHIER *fichier, int index);
+char *genKey(int *Key); /// convertit la clé key en chaine de 4 chars est l'incrémente (générateur de clé)
 
-char *genKey(int *Key);
+size_t
+getArticle(char *article); /// recupére un article a partir du clavier dans article et retourne sa taille en size_t
 
-size_t getArticle(char *article);
+char *getLength(size_t size); /// convertit une taille en entier en chaine sur 3 chars
 
-char *getLength(size_t size);
+char *buildString(char *length, State state, char *Key,
+                  char *article); /// construit l'enregistrement à ecrire dans le fichier
 
-char *buildString(char *length, State state, char *Key, char *article);
+bool addToBuffer(Buffer *buffer,
+                 char *record); /// ajoute un record au buffer si il ya de la place et retourne vrai sinon elle retourne faux
 
-bool addToBuffer(Buffer *buffer, char *record);
+bool chauvocherBuffer(Buffer *buffer,
+                      char *record); /// ajoute un nombre de char de record a buffer pour qu'il soit romplie est laisse le reste dans record
 
-bool chauvocherBuffer(Buffer *buffer, char *record);
+bool viderBuffer(Buffer *buffer); /// vide tous le buffer pour evité les erreurs
 
-bool viderBuffer(Buffer *buffer);
+bool viderChaine(char *str, size_t length); /// vide une chaine
 
-bool viderChaine(char *str, size_t length);
+bool EcrireEntete(FICHIER *fichier); /// ecrit l'entete du fichier dans le fichier entete
 
-bool EcrireEntete(FICHIER *fichier);
-
-bool lireEntete(FICHIER *fichier);
+bool lireEntete(FICHIER *fichier); /// lit l'entete du fichier pour récupérer ses caractéristiques
 
 bool initEntete(FICHIER *fichier, char *Name, int nbBlocs, int nbArticles, int nbDeleted, int nbInserted, bool modified,
-                int lastKey);
+                int lastKey); /// initialise l'entete
 
-char *genEnteteName(const char *fileName);
+char *
+genEnteteName(const char *fileName); /// genere le nom de l'entete a partir du nom du fichier et la termine par .ent
 
-char *genReorgFileName(const char *fileName);
+char *genReorgFileName(
+        const char *fileName); /// génére un nom pour le fichier après reorganisation pour ne pas perde l'ancien fichier
 
-void separator();
+void separator(); /// affiche un separateur sur l'ecran
 
-bool afficherEntete(FICHIER *fichier);
+bool afficherEntete(FICHIER *fichier); /// affiche toute l'entete du fichier
 
-bool blocPlein(Bloc bloc);
+bool blocPlein(Bloc bloc); /// retourne vrai si le bloc est plein
 
-char *subStringOfBloc(Buffer *buffer, int pos, size_t size);
+char *subStringOfBloc(Buffer *buffer, int pos, size_t size); /// n'est pas utilisé
 
-bool finBloc(Bloc bloc, int pos);
+bool finBloc(Bloc bloc, int pos); /// n'est pas utilisé
 
-void getInfo(Buffer *buff, char *taille, char *effac, char *key, int *pos, bool *depas);
+void getInfo(Buffer *buff, char *taille, char *effac, char *key, int *pos, bool *depas); /// n'est pas utilisé
 
-int getTaille(char *chaine, int pos, size_t size);
+int getTaille(char *chaine, int pos, size_t size); /// recupére un entier taille a partir de la position pos das chaine
 
-char getEffac(char *chaine, int pos);
+char getEffac(char *chaine, int pos); /// recupére un char effacé
 
-int getKey(char *chaine, int pos, size_t size);
+int getKey(char *chaine, int pos, size_t size); /// récupére une clé a partir de la position pos dans chaine
 
-bool fusionner(FICHIER *fichier, FICHIER *newFichier, ZoneTompon *zone);
+bool fusionner(FICHIER *fichier, FICHIER *newFichier,
+               ZoneTompon *zone); /// fusionne le fichier avec sa zone tompon et retourne le nouveau fichier dans newFichier
 
 
+char *randString(int length); /// génére une chaine aléatoirement de longueur length
 
+bool continuE(); /// déroulement du programme
+
+void AfficherMenu(); /// affiche le  menu d'options
+
+void askFileName(char *filename); /// demande le nom du fichier
+
+void affichierMain(); /// premier affichage du programme
