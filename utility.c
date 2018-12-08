@@ -342,7 +342,7 @@ void AfficherMenu() {
     separator();
     printf("8->Afficher l'entete du fichier \n");
     separator();
-    printf("9->Sauvegarder l'entete du fichier \n");
+    printf("9->Sauvegarder l'entete et le fichier \n");
     separator();
     printf("10->Renomer un fichier \n");
     separator();

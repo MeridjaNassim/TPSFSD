@@ -9,7 +9,10 @@
 
 #endif //TPSFSD_GESTION_H
 
-
+/*
+* Description : Biblio des fonctions De gestion du fichier , ( reorganisation , fusion , sauvegarde  )
+* Auteur : MERIDJA ABDELLAH NASSIM G02 2CP
+* */
 bool reorganiserFichier(FICHIER *fichier,
                         char *newFileName); /// réorganise la fichier physique en supprimant les données supprimer et donne le nom du nouveau fichier
 

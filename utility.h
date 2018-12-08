@@ -12,6 +12,10 @@
 
 #endif //TPSFSD_UTILITY_H
 
+/*
+* Description : Biblio des fonctions utiles pour la mise en oeuvre du programme.
+* Auteur : MERIDJA ABDELLAH NASSIM G02 2CP
+* */
 
 char *genKey(int *Key); /// convertit la clé key en chaine de 4 chars est l'incrémente (générateur de clé)
 

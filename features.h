@@ -8,6 +8,11 @@
 
 #endif //TPSFSD_FEATURES_H
 
+/*
+ * Description : Biblio des fonctions principales du programme , ( insertion , chargement , recherche , suppression )
+ * Auteur : MERIDJA ABDELLAH NASSIM G02 2CP
+ * */
+
 bool initLoad(FICHIER *fichier,
               int *_KEY_); /// fonction de chargement initiale du fichiers a partir d'articles entree au clavier et des clé généré automatiquement
 // est dans un ordre croissant à partir de 0

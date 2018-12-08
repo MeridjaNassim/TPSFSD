@@ -246,10 +246,11 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
                             currentBloc++;
                             nbBlocs++;
                         }
-                        if (strlen(buff->Record) != 0) {
+                        if (strlen(buff->Record) != 0 && i == zone->nbElement - 1) { /// dernier element
                             EcrireDir(fichier, currentBloc, buff);
                             viderBuffer(buff);
                             currentBloc++;
+                            nbBlocs++;
                         }
                     }
                 }

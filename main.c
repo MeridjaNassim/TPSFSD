@@ -1,14 +1,14 @@
 #include "features.h"
 
 /**
- * TP SFSD - 2018/2019- STRUCTURES SIMPLES
+ * TP SFSD 2CP- 2018/2019- STRUCTURES SIMPLES
  * Auteur : MERIDJA ABDELLAH NASSIM (monome)
  * GROUPE : 02
  * ENSEIGNANT : Mme . Alia
  * */
 
 
-int _KEY_ = -1;
+int _KEY_ = -1; /// clé initial pour chargement initiale
 
 int main() {
 
@@ -70,8 +70,8 @@ int main() {
         scanf("%d", &choice2);
         switch (choice2) {
             case 0: /// chargement aléatoire ;
-                printf("Chargement Aléatoire du fichier \n");
-                printf("Entrer le nombre de donnes a insérer aléatoirement");
+                printf("Chargement Aleatoire du fichier \n");
+                printf("Entrer le nombre de donnes a insérer aleatoirement : ");
                 scanf("%d", &nbdonnes);
                 srand(time(NULL));
                 randomLoadingOfFile(&file, nbdonnes);
@@ -106,14 +106,14 @@ int main() {
                     }
                 } else if (found) {
                     /// clé trouvé dans le fichier physique
-                    printf("L'article correspondant à la cle recherche est trouvee dans le fichier au bloc (%d) à la position (%d)",
+                    printf("L'article correspondant à la cle recherche est trouvee dans le fichier au bloc (%d) à la position (%d) \n",
                            numBloc, pos);
                     separator();
                     if (continuE()) {
                         continue;
                     }
                 } else {
-                    printf("l'article n'existe pas dans le fichier ...");
+                    printf("l'article n'existe pas dans le fichier ...\n");
                     separator();
                     if (continuE()) {
                         continue;
@@ -188,7 +188,8 @@ int main() {
                     continue;
                 }
                 break;
-            case 9: /// sauvgarde de l'entete
+            case 9: /// sauvgarde de l'entete et le fichier
+                fflush(file.filePtr); /// ecriture des buffer interne dans le fichier physique
                 if (EcrireEntete(&file)) {
                     separator();
                     printf("Sauvegarde de l'entete avec succes ...\n");
@@ -213,6 +214,7 @@ int main() {
                 printf("Operation inexistante rechoisisez ... \n");
                 continue;
         }
+
         /// verification pour la réorganisation automatique : si nombre d'articles supprimé > 1/2 * nombre d'articles dans le fichier
         if (file.entete.numberDeleted > POURCENTAGE * file.entete.numberArticles) {
             printf("Reorganisation Automatique du fichier ... \n");

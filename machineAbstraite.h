@@ -7,6 +7,10 @@
 #define TPSFSD_MACHINEABSTRAITE_H
 
 #endif //TPSFSD_MACHINEABSTRAITE_H
+/*
+* Description : Biblio de la machine abstraite du fichier
+* Auteur : MERIDJA ABDELLAH NASSIM G02 2CP
+* */
 /// MACHINE ABSTRAITE DU FICHIER
 bool Ouvrir(char *nom, FICHIER *fichier, MODE mode); /// ouvre un fichier
 

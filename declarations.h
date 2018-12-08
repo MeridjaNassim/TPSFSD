@@ -14,7 +14,10 @@
 #define READ_WRITE "wb+"
 #define POURCENTAGE 0.5
 #endif //TPSFSD_DECLARATIONS_H
-
+/*
+* Description : Biblio des Declarations du programme ainsi que les constantes , FICHIER , ENTETE ... etc
+* Auteur : MERIDJA ABDELLAH NASSIM G02 2CP
+* */
 /// Type definitions : --------
 typedef struct Inserted {
     int key;
@@ -35,7 +38,7 @@ typedef enum {
     NAME, NB_BLOCS, NB_ARTICLES, NB_DELETED, NB_INSERTED, MODIFIED, LAST_KEY
 } ATTRIBUTE;
 typedef enum {
-    VALID, DELETED, UNKNOWN
+    VALID, DELETED
 } State;
 typedef struct Bloc {
     char Record[MAX_BLOC_LENGTH];

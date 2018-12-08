@@ -265,7 +265,7 @@ void randomLoadingOfFile(FICHIER *fichier, int dataSize) {
     Buffer *buffer = &((*fichier).buffW); /// ptr vers notre buffer
     viderBuffer(buffer); /// on le vide pour ne pas avoir des erreurs
     for (int i = 0; i < dataSize; ++i) {
-        int r = rand() % 1000; /// on génére un taille aléatoire comprise entre 0 et 999
+        int r = rand() % MAX_ARTICLE_LENGTH + 1; /// on génére un taille aléatoire comprise entre 0 et 999
         if (r == 0) {
             /// si la taille aléatoire est nul on la met a 10
             r = 10;
