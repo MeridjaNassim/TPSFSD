@@ -175,6 +175,7 @@ int main() {
                 if (newFileName != NULL) {
                     Fermer(&file);
                     Ouvrir(newFileName, &file, _ANCIEN);
+                    EcrireEntete(&file);
                 } else {
                     printf("Erreur dans la réorganisation du fichier \n");
                 }

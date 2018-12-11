@@ -31,10 +31,14 @@ bool reorganiserFichier(FICHIER *fichier, char *newName) {
     //----------------------------------
     while (currentBloc < fichier->entete.numberBlocs) {
         getNextRecordInFile(fichier, &currentBloc, &pos, tailleF, &effF, keyF, articleF);
+        if (strcmp(tailleF, "\0") == 0) { /// on a rien lut
+            break;
+        }
         if (effF == 'V') {
             putRecordFile(&newFichier, &currentNewBloc, &posNew, tailleF, keyF, &effF, articleF);
             nbArticles++;
             nbChars = nbChars + (getTaille(tailleF, 0, 3) + 1 + 4 + 3);
+            lastKey = getKey(keyF, 0, 4);
         }
     }
 
@@ -43,7 +47,7 @@ bool reorganiserFichier(FICHIER *fichier, char *newName) {
     newFichier.entete.numberBlocs = nbBlocs;
     newFichier.entete.numberInserted = nbChars;
     newFichier.entete.numberArticles = nbArticles;
-    newFichier.entete.lastKey = getKey(keyF, 0, 4);
+    newFichier.entete.lastKey = lastKey;
     newFichier.entete.numberDeleted = 0;
     newFichier.entete.modified = true;
     EcrireEntete(&newFichier);
@@ -136,6 +140,7 @@ bool fusionner(FICHIER *fichier, FICHIER *newFichier, ZoneTompon *zone) {
                     strcpy(keyZ, keyF);
                     viderChaine(articleZ, MAX_ARTICLE_LENGTH);
                     effZ = 'V';
+                    getFromZone = false; /// on récupére plus d'elt de zone
                 }
                 getFromFile = false; /// on a pas encore inséré celui du fichier
             } else {
@@ -156,6 +161,9 @@ bool fusionner(FICHIER *fichier, FICHIER *newFichier, ZoneTompon *zone) {
     /// tant que on a encore des blocs dans le fichier on ecrit tous les records qu'il contiennent
     while (currentBloc < fichier->entete.numberBlocs) {
         getNextRecordInFile(fichier, &currentBloc, &pos, tailleF, &effF, keyF, articleF);
+        if (strcmp(tailleF, "\0") == 0) { /// on a rien lut
+            break;
+        }
         putRecordFile(newFichier, &currentNewBloc, &newPos, tailleF, keyF, &effF, articleF);
         nbArticles++;
         nbChar = nbChar + getTaille(tailleF, 0, 3) + 1 + 3 + 4;
@@ -266,14 +274,15 @@ bool reorganiser(FICHIER *fichier, ZoneTompon *zone, bool useZone, char *newFile
             Fermer(fichier);
         } else {
             /// si la plus grande clé dans fichier est inférieure a la plus petite clé dans zone
-            static FICHIER newFichier; /// le fichier reorganisé a retourné
+            FICHIER *newFichier = malloc(sizeof(FICHIER)); /// le fichier reorganisé a retourné
             char *newName = genReorgFileName(fichier->entete.fileName); /// un nouveau nom pour ce fichier
 //            strcpy(newName, "New"); /// on rajoute New a debut du fichier
 //            strcat(newName, fichier->entete.fileName);
-            Ouvrir(newName, &newFichier,
+            Ouvrir(newName, newFichier,
                    _NOUVEAU); /// on ouvre ce fichier on mode NOUVEAU (l'entete est généré automatiquement)
-            fusionner(fichier, &newFichier, zone); ///  on fusionne zone est fichier dans le new fichier
+            fusionner(fichier, newFichier, zone); ///  on fusionne zone est fichier dans le new fichier
             strcpy(newFileName, newName);
+            fichier = newFichier;
         }
     } else {
         /// reorganisation uniquement du fichier;
@@ -286,6 +295,7 @@ void SauvegarderZoneFichierVide(FICHIER *fichier, ZoneTompon *zone) {
     /// Sauvegarde toute la zone tompon du programme dans un fichier supposé vide , elle est utilisé quand on insére dans un fichier initialement vide
     /// pour éviter l'appelle de la fonction de réorganisation
     Buffer *buffer = &((*fichier).buffW); /// ptr vers notre buffer
+    viderBuffer(buffer);
     int bloc = 0; /// bloc courrant
     int nbArticles = 0; /// nombre d'articles
     int nbChar = 0; /// nombre de chars
