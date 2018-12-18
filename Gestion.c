@@ -179,7 +179,7 @@ bool fusionner(FICHIER *fichier, FICHIER *newFichier, ZoneTompon *zone) {
     }
     zone->nbElement = 0;
     int lastbloc = currentNewBloc;
-    initEntete(newFichier, newFichier->entete.fileName, lastbloc, nbArticles, 0, nbChar, false, lastKey);
+    initEntete(newFichier, newFichier->entete.fileName, lastbloc + 1, nbArticles, 0, nbChar, false, lastKey);
     EcrireEntete(newFichier);
 }
 
@@ -323,6 +323,9 @@ void SauvegarderZoneFichierVide(FICHIER *fichier, ZoneTompon *zone) {
     /// si on a encore des char restant on les ecrit
     if (strlen(buffer->Record) != 0) {
         EcrireDir(fichier, bloc, buffer);
+        if (bloc == 0) {
+            bloc++;
+        }
     }
     /// MAJ de l'entete
     fichier->entete.numberBlocs = bloc;
